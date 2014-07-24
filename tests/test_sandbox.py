@@ -15,8 +15,8 @@ class TestBaseFeedlyClass(unittest.TestCase):
         f_auth_url = self.feedly.get_auth_url()
         self.assertEqual(auth_url, f_auth_url)
 
-    def test_finish_authorization(self):
-        self.feedly.finish_authorization("test_code")
+    def test_get_access_token(self):
+        self.feedly.get_access_token("test_code")
         result = {
             u'errorCode': 400,
             u'errorMessage': u'expired or wrong code (check URL encoding)',

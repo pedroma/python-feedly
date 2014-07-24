@@ -1,8 +1,18 @@
 from urllib import urlencode
 import requests
+from feedly.categories import Categories
+from feedly.profile import Profile
 
 
 class FeedlyAPI(object):
+    """
+    Base class for the Feedly API. This class only implements the auth
+    endpoints:
+        * v3/auth/auth
+        * v3/auth/token
+
+    other calls are delegated to their specific classes to keep this one simple
+    """
     # sandbox client id and client secret are temporary for development
     # get new one at: https://groups.google.com/forum/#!forum/feedly-cloud
     SANDBOX_CLIENT_ID = "sandbox"
@@ -33,17 +43,30 @@ class FeedlyAPI(object):
         self.redirect_uri = "http://localhost:8080/"
         self.scope = "https://cloud.feedly.com/subscriptions"
         self.credentials = credentials
+        self.profile = Profile(self)
+        self.categories = Categories(self)
 
-    def _get_request_context(self):
-        return {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-        }
+    def _make_get_request(self, endpoint, params={}):
+        """
+        Makes a request to `endpoint` using available access_token.
+        Throws Exception if access_token does not exist
+        """
+        if "access_token" not in self.credentials:
+            raise Exception("No access_token present")
+        response = requests.get(
+            "{self.base_url}{endpoint}".format(**locals()), params=params,
+            headers={
+                "Authorization": "OAuth {self.credentials[access_token]}".format(**locals())
+            }
+        )
+        if response.status_code == 200:
+            return response.json()
 
     def get_auth_url(self):
         """
         Get url the user should be sent to to get the code for authentication
         """
+        endpoint = "v3/auth/auth"
         query_params = {
             "client_id": self.client_id,
             "response_type": "code",
@@ -51,31 +74,42 @@ class FeedlyAPI(object):
             "scope": self.scope
         }
         query_string = urlencode(query_params)
-        return "{self.base_url}v3/auth/auth?{query_string}".format(**locals())
+        return "{self.base_url}{endpoint}?{query_string}".format(**locals())
 
-    def finish_authorization(self, code, client_secret=None):
-        query_params = self._get_request_context()
-        query_params.update({
+    def get_access_token(self, code):
+        """
+        Using code from redirect fetch valid credentails (access_token) for
+        subsequent requests
+        """
+        endpoint = "v3/auth/token"
+        query_params = {
             "code": code,
             "redirect_uri": self.redirect_uri,
-            "grant_type": "authorization_code"
+            "grant_type": "authorization_code",
+            "client_id": self.client_id,
+            "client_secret": self.client_secret
 
-        })
-        request_url = "{self.base_url}v3/auth/token".format(**locals())
+        }
+        request_url = "{self.base_url}{endpoint}".format(**locals())
         response = requests.post(request_url, params=query_params)
         self.credentials = response.json()
         return self.credentials
 
     def refresh_token(self):
+        """
+        Refresh existing access_token using refresh token
+        """
         # check the existence of a refresh token
         if "refresh_token" not in self.credentials:
             raise Exception("Can't refresh token without a refresh_token value")
-        query_params = self._get_request_context()
-        query_params.update({
+        endpoint = "v3/auth/token"
+        query_params = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
             "refresh_token": self.credentials["refresh_token"],
             "grant_type": "refresh_token"
-        })
-        request_url = "{self.base_url}v3/auth/token".format(**locals())
+        }
+        request_url = "{self.base_url}{endpoint}".format(**locals())
         response = requests.post(request_url, params=query_params)
         self.credentials.update(response.json())
         return self.credentials
