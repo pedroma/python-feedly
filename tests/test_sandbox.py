@@ -5,11 +5,6 @@ from feedly import FeedlyAPI
 class TestBaseFeedlyClass(unittest.TestCase):
     def setUp(self):
         self.feedly = FeedlyAPI(sandbox=True)
-        self.test_code = (
-            "AvYc7I97ImkiOiJkY2JlMTI1OS04Yjc2LTQ0NzEtODVlOC1mNzdiYmE1NjAwZDAi"
-            "LCJ1IjoiMTA5ODMwNzc0ODI4MTgxMTQ1NTA0IiwiYSI6IkZlZWRseSBzYW5kYm94"
-            "IGNsaWVudCIsInAiOjYsInQiOjE0MDYxOTg4NTQ1MDh9"
-        )
 
     def test_get_auth_url(self):
         auth_url = (
@@ -19,3 +14,33 @@ class TestBaseFeedlyClass(unittest.TestCase):
         )
         f_auth_url = self.feedly.get_auth_url()
         self.assertEqual(auth_url, f_auth_url)
+
+    def test_finish_authorization(self):
+        self.feedly.finish_authorization("test_code")
+        result = {
+            u'errorCode': 400,
+            u'errorMessage': u'expired or wrong code (check URL encoding)',
+        }
+        self.assertEqual(
+            result["errorCode"], self.feedly.credentials["errorCode"]
+        )
+        self.assertEqual(
+            result["errorMessage"], self.feedly.credentials["errorMessage"]
+        )
+
+    def test_refresh_token_exception(self):
+        self.assertRaises(Exception, self.feedly.refresh_token())
+
+    def test_refresh_token(self):
+        self.feedly.credentials["refresh_token"] = "test_token"
+        self.feedly.refresh_token()
+        result = {
+            u'errorCode': 401,
+            u'errorMessage': u'bad refresh_token: test_token (check URL encoding)',
+        }
+        self.assertEqual(
+            result["errorCode"], self.feedly.credentials["errorCode"]
+        )
+        self.assertEqual(
+            result["errorMessage"], self.feedly.credentials["errorMessage"]
+        )

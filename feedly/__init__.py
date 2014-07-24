@@ -1,4 +1,5 @@
 from urllib import urlencode
+import requests
 
 
 class FeedlyAPI(object):
@@ -9,7 +10,7 @@ class FeedlyAPI(object):
     SANDBOX_BASE_URL = "https://sandbox.feedly.com/"
     BASE_URL = "https://cloud.feedly.com/"
 
-    def __init__(self, client_id=None, client_secret=None, sandbox=False):
+    def __init__(self, client_id=None, client_secret=None, sandbox=False, credentials={}):
         if sandbox:
             # allow client_id and client_secret overriding
             self.client_id = (
@@ -31,6 +32,13 @@ class FeedlyAPI(object):
         # TODO: allow overriding of redirect_uri and scope
         self.redirect_uri = "http://localhost:8080/"
         self.scope = "https://cloud.feedly.com/subscriptions"
+        self.credentials = credentials
+
+    def _get_request_context(self):
+        return {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+        }
 
     def get_auth_url(self):
         """
@@ -46,4 +54,28 @@ class FeedlyAPI(object):
         return "{self.base_url}v3/auth/auth?{query_string}".format(**locals())
 
     def finish_authorization(self, code, client_secret=None):
-        pass
+        query_params = self._get_request_context()
+        query_params.update({
+            "code": code,
+            "redirect_uri": self.redirect_uri,
+            "grant_type": "authorization_code"
+
+        })
+        request_url = "{self.base_url}v3/auth/token".format(**locals())
+        response = requests.post(request_url, params=query_params)
+        self.credentials = response.json()
+        return self.credentials
+
+    def refresh_token(self):
+        # check the existence of a refresh token
+        if "refresh_token" not in self.credentials:
+            raise Exception("Can't refresh token without a refresh_token value")
+        query_params = self._get_request_context()
+        query_params.update({
+            "refresh_token": self.credentials["refresh_token"],
+            "grant_type": "refresh_token"
+        })
+        request_url = "{self.base_url}v3/auth/token".format(**locals())
+        response = requests.post(request_url, params=query_params)
+        self.credentials.update(response.json())
+        return self.credentials
