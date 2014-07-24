@@ -17,4 +17,4 @@ you back to `http://localhost:8080/` you will have a code as a GET parameter
 At this point you will have a functional `FeedlyAPI` object. You can test 
 some methods after this. For example:
 
-    $ feedly.get_profile()
+    feedly.get_profile()
