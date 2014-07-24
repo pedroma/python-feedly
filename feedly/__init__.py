@@ -1,7 +1,5 @@
 from urllib import urlencode
 import requests
-from feedly.categories import Categories
-from feedly.profile import Profile
 
 
 class FeedlyAPI(object):
@@ -10,8 +8,6 @@ class FeedlyAPI(object):
     endpoints:
         * v3/auth/auth
         * v3/auth/token
-
-    other calls are delegated to their specific classes to keep this one simple
     """
     # sandbox client id and client secret are temporary for development
     # get new one at: https://groups.google.com/forum/#!forum/feedly-cloud
@@ -43,8 +39,6 @@ class FeedlyAPI(object):
         self.redirect_uri = "http://localhost:8080/"
         self.scope = "https://cloud.feedly.com/subscriptions"
         self.credentials = credentials
-        self.profile = Profile(self)
-        self.categories = Categories(self)
 
     def _make_get_request(self, endpoint, params={}):
         """
@@ -54,9 +48,21 @@ class FeedlyAPI(object):
         if "access_token" not in self.credentials:
             raise Exception("No access_token present")
         response = requests.get(
-            "{self.base_url}{endpoint}".format(**locals()), params=params,
+            "".join([self.base_url, endpoint]), params=params,
             headers={
-                "Authorization": "OAuth {self.credentials[access_token]}".format(**locals())
+                "Authorization": "".join(["OAuth ", self.credentials["access_token"]])
+            }
+        )
+        if response.status_code == 200:
+            return response.json()
+
+    def _make_post_request(self, endpoint, data={}):
+        if "access_token" not in self.credentials:
+            raise Exception("No access_token present")
+        response = requests.post(
+            "".join([self.base_url, endpoint]), data=data,
+            headers={
+                "Authorization": "".join(["OAuth ", self.credentials["access_token"]])
             }
         )
         if response.status_code == 200:
@@ -74,7 +80,7 @@ class FeedlyAPI(object):
             "scope": self.scope
         }
         query_string = urlencode(query_params)
-        return "{self.base_url}{endpoint}?{query_string}".format(**locals())
+        return "".join([self.base_url, endpoint, "?", query_string])
 
     def get_access_token(self, code):
         """
@@ -90,7 +96,7 @@ class FeedlyAPI(object):
             "client_secret": self.client_secret
 
         }
-        request_url = "{self.base_url}{endpoint}".format(**locals())
+        request_url = "".join([self.base_url, endpoint])
         response = requests.post(request_url, params=query_params)
         self.credentials = response.json()
         return self.credentials
@@ -109,7 +115,44 @@ class FeedlyAPI(object):
             "refresh_token": self.credentials["refresh_token"],
             "grant_type": "refresh_token"
         }
-        request_url = "{self.base_url}{endpoint}".format(**locals())
+        request_url = "".join([self.base_url, endpoint])
         response = requests.post(request_url, params=query_params)
         self.credentials.update(response.json())
         return self.credentials
+
+    # profiles endpoints - http://developer.feedly.com/v3/profile/
+    def get_profile(self):
+        """
+        Returns a Profile dictionary
+        """
+        return self._make_get_request("v3/profile")
+
+    def update_profile(self, fields={}):
+        """
+        Fields allowed:
+            email - Optional string
+            givenName - Optional string
+            familyName - Optional string
+            picture - Optional string
+            gender - Optional boolean
+            locale - Optional string
+            twitter - Optional string twitter handle. example: edwk
+            facebook - Optional string facebook id
+        """
+        return self._make_post_request("v3/profile", fields=fields)
+
+    # categories endpoints - http://developer.feedly.com/v3/categories/
+    def get_categories(self):
+        """
+        Returns the user's categories
+        """
+        return self._make_get_request("v3/categories")
+
+    def update_category(self, category_id):
+        raise NotImplementedError("Not implemented yet")
+
+    # entries endpoints - http://developer.feedly.com/v3/entries/#create-and-tag-an-entry
+    def get_entry(self, entry_id):
+        return self._make_get_request(
+            "v3/entry/{entry_id}".format(entry_id)
+        )
