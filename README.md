@@ -3,16 +3,16 @@
 
 Sample usage:
 
-    $ from feedly import FeedlyAPI
-    $ feedly = FeedlyAPI(sandbox=True)
-    $ feedly.get_auth_url()
+    from feedly import FeedlyAPI
+    feedly = FeedlyAPI(sandbox=True)
+    feedly.get_auth_url()
     'https://sandbox.feedly.com/v3/auth/auth?scope....'
 
 At this point you have to go to the url given and login. After feedly redirects
 you back to `http://localhost:8080/` you will have a code as a GET parameter
 
-    $ code = "code_from_request"
-    $ feedly.get_access_token(code)
+    code = "code_from_request"
+    feedly.get_access_token(code)
    
 At this point you will have a functional `FeedlyAPI` object. You can test 
 some methods after this. For example:
