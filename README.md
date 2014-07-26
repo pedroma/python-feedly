@@ -18,3 +18,30 @@ At this point you will have a functional `FeedlyAPI` object. You can test
 some methods after this. For example:
 
     feedly.get_profile()
+    
+
+API endpoints checklist (http://developer.feedly.com/):
+
+    [*] Authentication
+    [-] Categories
+    [-] Entries
+    [ ] Evernote
+    [ ] Facebook
+    [-] Feeds
+    [-] Markers
+    [ ] Microsoft
+    [ ] Mixes
+    [ ] OPML
+    [ ] Preference
+    [*] Profile
+    [ ] Search
+    [ ] Short URL
+    [ ] Streams
+    [ ] Subscriptions
+    [ ] Tags
+    [ ] Topics
+    [ ] Twitter
+
+`[*]` - Fully implemented
+`[-]` - missing methods
+`[ ]` - not implemented yet
