@@ -142,7 +142,7 @@ class FeedlyAPI(object):
         """
         return self._make_get_request("v3/profile")
 
-    def update_profile(self, fields={}):
+    def update_profile(self, fields):
         """
         Fields allowed:
             email - Optional string
@@ -170,16 +170,109 @@ class FeedlyAPI(object):
     def get_entry(self, entry_id):
         return self._make_get_request("".join(["v3/entry/", entry_id]))
 
-    def get_entry_list(self, entries=[]):
+    def get_entry_list(self, entries):
         raise NotImplementedError("Not implemented yet")
 
     # feeds endpoints - http://developer.feedly.com/v3/feeds/
     def get_feed(self, feed_id):
         return self._make_get_request("".join(["v3/feeds/", feed_id]))
 
-    def get_feed_list(self, feeds=[]):
+    def get_feed_list(self, feeds):
         raise NotImplementedError("Not implemented yet")
 
     # markers endpoints - http://developer.feedly.com/v3/markers/
     def get_unread_counts(self):
         return self._make_get_request("v3/markers/counts")
+
+    def mark_articles_read(self, entries):
+        """
+        Mark one or multiple articles as read
+        Entries is the list of entries to mark as read.
+        """
+        data = {
+            "entryIds": entries,
+            "action": "markAsRead",
+            "type": "entries"
+        }
+        return self._make_post_request("v3/markers/", data=data)
+
+    def keep_articles_unread(self, entries):
+        """
+        Keep one or multiple articles as unread
+        """
+        data = {
+            "entryIds": entries,
+            "action": "keepUnread",
+            "type": "entries"
+        }
+        return self._make_post_request("v3/markers/", data=data)
+
+    def mark_feed_as_read(self, feeds_id, last_read_entry=None, as_of=None):
+        """
+        Mark a feed as read
+        :param feeds_id: list of feed identifiers
+        :param last_read_entry: id of the last read entry on the feed
+        :param as_of: UNIX timestamp (mark as read as_of)
+        """
+        data = {
+            "action": "markAsRead",
+            "type": "feeds",
+            "feedIds": feeds_id,
+        }
+        if last_read_entry is not None:
+            data["lastReadEntryId"] = last_read_entry
+        elif as_of is not None:
+            data["asOf"] = as_of
+        else:
+            raise Exception(
+                "One of last_read_entry or as_of needs to be provided"
+            )
+        return self._make_post_request("v3/markers/", data=data)
+
+    def mark_category_as_read(self, categories_ids, last_read_entry=None, as_of=None):
+        """
+        Mark a category as read
+        """
+        data = {
+            "action": "markAsRead",
+            "type": "categories",
+            "categoryIds": categories_ids,
+        }
+        if last_read_entry is not None:
+            data["lastReadEntryId"] = last_read_entry
+        elif as_of is not None:
+            data["asOf"] = as_of
+        else:
+            raise Exception(
+                "One of last_read_entry or as_of needs to be provided"
+            )
+        return self._make_post_request("v3/markers/", data=data)
+
+    def undo_mark_as_read(self):
+        raise NotImplementedError("Not implemented yet")
+
+    def mark_articles_as_saved(self):
+        raise NotImplementedError("Not implemented yet")
+
+    def mark_articles_as_unsaved(self):
+        raise NotImplementedError("Not implemented yet")
+
+    def get_latest_reads(self, newer_than=None):
+        """
+        Get the latest read operations (to sync local cache)
+        :param newer_than: milliseconds, default is 30 days.
+        """
+        params = {}
+        if newer_than is not None:
+            params["newerThan"] = newer_than
+        return self._make_get_request("v3/markers/reads", params=params)
+
+    def get_latest_tagged_ids(self, newer_than=None):
+        """
+        Get the latest tagged entry ids
+        :param newer_than: milliseconds, default is 30 days.
+        """
+        params = {}
+        if newer_than is not None:
+            params["newerThan"] = newer_than
+        return self._make_get_request("v3/markers/tags", params=params)
