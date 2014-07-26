@@ -1,1 +1,1 @@
-from test_sandbox import TestBaseFeedlyClass
+from test_methods import TestBaseFeedlyClass

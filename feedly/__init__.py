@@ -1,5 +1,7 @@
+import json
 from urllib import urlencode
 import requests
+import os
 
 
 class FeedlyAPI(object):
@@ -8,61 +10,68 @@ class FeedlyAPI(object):
     endpoints:
         * v3/auth/auth
         * v3/auth/token
+
+        Sandbox client_id: sandbox
+        Sandbox client_secret: ES3R6KCEG46BW9MYD332
+        These credentials will expire in 01/08/2014 get new ones at
+        https://groups.google.com/forum/#!forum/feedly-cloud
     """
-    # sandbox client id and client secret are temporary for development
-    # get new one at: https://groups.google.com/forum/#!forum/feedly-cloud
-    SANDBOX_CLIENT_ID = "sandbox"
-    SANDBOX_CLIENT_SECRET = "ES3R6KCEG46BW9MYD332"
     SANDBOX_BASE_URL = "https://sandbox.feedly.com/"
     BASE_URL = "https://cloud.feedly.com/"
 
-    def __init__(self, client_id=None, client_secret=None, sandbox=False, credentials={}):
-        if sandbox:
-            # allow client_id and client_secret overriding
-            self.client_id = (
-                client_id if client_id is not None else self.SANDBOX_CLIENT_ID
-            )
-            self.client_secret = (
-                client_secret if client_secret is not None else self.SANDBOX_CLIENT_SECRET
-            )
-            self.base_url = self.SANDBOX_BASE_URL
-        elif client_id is None or client_secret is None:
+    def __init__(
+            self, client_id=None, client_secret=None,
+            access_token=None, refresh_token=None
+    ):
+        """
+        There are 2 use cases for this class:
+         * we already have an access token and a refresh token
+         * we want to get an access token
+        """
+        client_keys_none = client_id is None or client_secret is None
+        tokens_none = access_token is None or refresh_token is None
+        if client_keys_none and tokens_none:
             raise Exception(
-                "When using production environment "
-                "client_id and client_secret must be provided"
+                "(client_id and client_secret) or "
+                "(access_token and refresh_token) must be provided"
             )
-        else:
-            self.client_id = client_id
-            self.client_secret = client_secret
-            self.base_url = self.BASE_URL
+        # allow client_id and client_secret overriding
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.base_url = self.BASE_URL
+        if self.client_id == "sandbox":
+            self.base_url = self.SANDBOX_BASE_URL
+
         # TODO: allow overriding of redirect_uri and scope
         self.redirect_uri = "http://localhost:8080/"
         self.scope = "https://cloud.feedly.com/subscriptions"
-        self.credentials = credentials
+        self.access_token = access_token
+        self.refresh_token = refresh_token
 
     def _make_get_request(self, endpoint, params={}):
         """
         Makes a request to `endpoint` using available access_token.
         Throws Exception if access_token does not exist
         """
-        if "access_token" not in self.credentials:
+        if self.access_token is None:
             raise Exception("No access_token present")
         response = requests.get(
             "".join([self.base_url, endpoint]), params=params,
             headers={
-                "Authorization": "".join(["OAuth ", self.credentials["access_token"]])
+                "Authorization": "".join(["OAuth ", self.access_token])
             }
         )
         if response.status_code == 200:
             return response.json()
 
     def _make_post_request(self, endpoint, data={}):
-        if "access_token" not in self.credentials:
+        if self.access_token is None:
             raise Exception("No access_token present")
         response = requests.post(
-            "".join([self.base_url, endpoint]), data=data,
+            "".join([self.base_url, endpoint]), data=json.dumps(data),
             headers={
-                "Authorization": "".join(["OAuth ", self.credentials["access_token"]])
+                "Authorization": "".join(["OAuth ", self.access_token]),
+                "Content-Type": "application/json"
             }
         )
         if response.status_code == 200:
@@ -98,27 +107,33 @@ class FeedlyAPI(object):
         }
         request_url = "".join([self.base_url, endpoint])
         response = requests.post(request_url, params=query_params)
-        self.credentials = response.json()
-        return self.credentials
+        credentials = response.json()
+        if "accessToken" not in credentials or "refreshToken" not in credentials:
+            raise Exception("Authentication failed")
+        self.access_token = credentials["accessToken"]
+        self.refresh_token = credentials["refreshToken"]
+        return credentials
 
-    def refresh_token(self):
+    def update_access_token(self):
         """
         Refresh existing access_token using refresh token
         """
         # check the existence of a refresh token
-        if "refresh_token" not in self.credentials:
+        if self.refresh_token is None:
             raise Exception("Can't refresh token without a refresh_token value")
         endpoint = "v3/auth/token"
         query_params = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,
-            "refresh_token": self.credentials["refresh_token"],
+            "refresh_token": self.refresh_token,
             "grant_type": "refresh_token"
         }
         request_url = "".join([self.base_url, endpoint])
         response = requests.post(request_url, params=query_params)
-        self.credentials.update(response.json())
-        return self.credentials
+        credentials = response.json()
+        if "accessToken" in credentials:
+            self.access_token = credentials["accessToken"]
+        return credentials
 
     # profiles endpoints - http://developer.feedly.com/v3/profile/
     def get_profile(self):
@@ -139,7 +154,7 @@ class FeedlyAPI(object):
             twitter - Optional string twitter handle. example: edwk
             facebook - Optional string facebook id
         """
-        return self._make_post_request("v3/profile", fields=fields)
+        return self._make_post_request("v3/profile", data=fields)
 
     # categories endpoints - http://developer.feedly.com/v3/categories/
     def get_categories(self):
@@ -153,6 +168,18 @@ class FeedlyAPI(object):
 
     # entries endpoints - http://developer.feedly.com/v3/entries/#create-and-tag-an-entry
     def get_entry(self, entry_id):
-        return self._make_get_request(
-            "v3/entry/{entry_id}".format(entry_id)
-        )
+        return self._make_get_request("".join(["v3/entry/", entry_id]))
+
+    def get_entry_list(self, entries=[]):
+        raise NotImplementedError("Not implemented yet")
+
+    # feeds endpoints - http://developer.feedly.com/v3/feeds/
+    def get_feed(self, feed_id):
+        return self._make_get_request("".join(["v3/feeds/", feed_id]))
+
+    def get_feed_list(self, feeds=[]):
+        raise NotImplementedError("Not implemented yet")
+
+    # markers endpoints - http://developer.feedly.com/v3/markers/
+    def get_unread_counts(self):
+        return self._make_get_request("v3/markers/counts")
