@@ -80,6 +80,7 @@ class FeedlyAPI(object):
                 "Got status code {response.status_code} and content "
                 "{response.content}".format(**locals())
             )
+        return response.json()
 
     def _make_delete_request(self, endpoint, data={}):
         # TODO: make request method (make_get, make_post, make_delete) generic

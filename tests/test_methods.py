@@ -59,10 +59,10 @@ class TestBaseFeedlyClass(unittest.TestCase):
         self.assertEqual(categories, CATEGORIES_EXAMPLE)
 
     def test_update_category(self):
-        self.assertRaises(
-            NotImplementedError,
-            self.feedly.update_category, "", ""
-        )
+        # updating a category returns nothing by feedly
+        with HTTMock(get_categories_successfull):
+            category = self.feedly.update_category("sample", "new_label")
+        self.assertEqual(category, None)
 
     def test_get_entry(self):
         with HTTMock(get_entries_successfull):
