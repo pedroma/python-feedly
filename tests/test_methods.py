@@ -6,23 +6,24 @@ from feedly import FeedlyAPI
 from tests.config import PROFILE_EXAMPLE, CATEGORIES_EXAMPLE, ENTRY_EXAMPLE
 
 
-@urlmatch(
-    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/profile"
-)
+@urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/profile")
 def get_profile_successfull(url, request):
     return json.dumps(PROFILE_EXAMPLE)
 
 
-@urlmatch(
-    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/categories", method="get"
-)
+@urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/profile")
+def update_profile_successfull(url, request):
+    profile = PROFILE_EXAMPLE.copy()
+    profile.update(json.loads(request.body))
+    return json.dumps(profile)
+
+
+@urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/categories")
 def get_categories_successfull(url, request):
     return json.dumps(CATEGORIES_EXAMPLE)
 
 
-@urlmatch(
-    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/entry", method="get"
-)
+@urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/entry")
 def get_entries_successfull(url, request):
     return json.dumps(ENTRY_EXAMPLE)
 
@@ -48,11 +49,9 @@ class TestBaseFeedlyClass(unittest.TestCase):
 
     def test_update_profile(self):
         # get old name, set a new one and revert back
-        with HTTMock(get_profile_successfull):
-            profile = self.feedly.update_profile(
-                fields={"givenName": "first name"}
-            )
-        self.assertEqual(profile["givenName"], "first name")
+        with HTTMock(update_profile_successfull):
+            profile = self.feedly.update_profile(givenName="first name2")
+        self.assertEqual(profile["givenName"], "first name2")
 
     def test_get_categories(self):
         with HTTMock(get_categories_successfull):

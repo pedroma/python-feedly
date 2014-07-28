@@ -144,7 +144,7 @@ class FeedlyAPI(object):
         """
         return self._make_get_request("v3/profile")
 
-    def update_profile(self, fields):
+    def update_profile(self, **kwargs):
         """
         Fields allowed:
             email - Optional string
@@ -156,7 +156,7 @@ class FeedlyAPI(object):
             twitter - Optional string twitter handle. example: edwk
             facebook - Optional string facebook id
         """
-        return self._make_post_request("v3/profile", data=fields)
+        return self._make_post_request("v3/profile", data=kwargs)
 
     # categories endpoints - http://developer.feedly.com/v3/categories/
     def get_categories(self):
