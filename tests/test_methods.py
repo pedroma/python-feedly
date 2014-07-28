@@ -1,6 +1,30 @@
+import json
 import unittest
 import os
+from httmock import urlmatch, HTTMock
 from feedly import FeedlyAPI
+from tests.config import PROFILE_EXAMPLE, CATEGORIES_EXAMPLE, ENTRY_EXAMPLE
+
+
+@urlmatch(
+    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/profile"
+)
+def get_profile_successfull(url, request):
+    return json.dumps(PROFILE_EXAMPLE)
+
+
+@urlmatch(
+    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/categories", method="get"
+)
+def get_categories_successfull(url, request):
+    return json.dumps(CATEGORIES_EXAMPLE)
+
+
+@urlmatch(
+    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/entry", method="get"
+)
+def get_entries_successfull(url, request):
+    return json.dumps(ENTRY_EXAMPLE)
 
 
 class TestBaseFeedlyClass(unittest.TestCase):
@@ -15,29 +39,25 @@ class TestBaseFeedlyClass(unittest.TestCase):
             client_id=client_id, client_secret=client_secret,
             access_token=access_token, refresh_token=refresh_token
         )
-        # let's refresh the token right away to test the function and
-        # make sure we have a valid token
-        self.feedly.update_access_token()
 
     def test_get_profile(self):
-        profile_response = self.feedly.get_profile()
+        with HTTMock(get_profile_successfull):
+            profile_response = self.feedly.get_profile()
         self.assertTrue("givenName" in profile_response)
         self.assertTrue("id" in profile_response)
 
     def test_update_profile(self):
         # get old name, set a new one and revert back
-        old_name = self.feedly.get_profile()["givenName"]
-        self.feedly.update_profile(fields={"givenName": "epdro2"})
-        profile = self.feedly.get_profile()
-        self.assertEqual(profile["givenName"], "epdro2")
-        self.feedly.update_profile(fields={"givenName": old_name})
-        self.assertEqual(profile["givenName"], old_name)
+        with HTTMock(get_profile_successfull):
+            profile = self.feedly.update_profile(
+                fields={"givenName": "first name"}
+            )
+        self.assertEqual(profile["givenName"], "first name")
 
     def test_get_categories(self):
-        try:
-            self.feedly.get_categories()
-        except Exception:
-            self.assertTrue(False)
+        with HTTMock(get_categories_successfull):
+            categories = self.feedly.get_categories()
+        self.assertEqual(categories, CATEGORIES_EXAMPLE)
 
     def test_update_category(self):
         self.assertRaises(
@@ -46,6 +66,7 @@ class TestBaseFeedlyClass(unittest.TestCase):
         )
 
     def test_get_entry(self):
-        entry = self.feedly.get_entry("super_entry")
+        with HTTMock(get_entries_successfull):
+            entry = self.feedly.get_entry("super_entry")
         # super_entry does not exist
-        self.assertEqual(entry, None)
+        self.assertEqual(entry, ENTRY_EXAMPLE)

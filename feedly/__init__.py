@@ -171,7 +171,7 @@ class FeedlyAPI(object):
         """
         raise NotImplementedError("Not implemented yet")
 
-    # entries endpoints - http://developer.feedly.com/v3/entries/#create-and-tag-an-entry
+    # entries endpoints - http://developer.feedly.com/v3/entries
     def get_entry(self, entry_id):
         return self._make_get_request("".join(["v3/entry/", entry_id]))
 

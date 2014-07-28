@@ -2,29 +2,19 @@ import unittest
 import os
 from httmock import urlmatch, HTTMock
 from feedly import FeedlyAPI
+from tests.config import AUTH_URL_SANDBOX, AUTH_URL_PRODUCTION
 
-
-AUTH_URL_SANDBOX = (
-    "https://sandbox.feedly.com/v3/auth/auth?scope=https%3A%2F%2Fcloud.feedly."
-    "com%2Fsubscriptions&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2F&respons"
-    "e_type=code&client_id=sandbox"
-)
-
-AUTH_URL_PRODUCTION = (
-    "https://cloud.feedly.com/v3/auth/auth?scope=https%3A%2F%2Fcloud.feedly."
-    "com%2Fsubscriptions&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2F&respons"
-    "e_type=code&client_id=sandbox"
-)
 
 @urlmatch(
-    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/auth/token",
+    netloc=r'(.*\.)?feedly\.com$', path="/v3/auth/token",
     method="post"
 )
 def get_access_token_successfull(url, request):
     return '{"accessToken": "dummy_token", "refreshToken": "dummy_token"}'
 
+
 @urlmatch(
-    netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/auth/token",
+    netloc=r'(.*\.)?feedly\.com$', path="/v3/auth/token",
     method="post"
 )
 def get_access_token_exception(url, request):
