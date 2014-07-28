@@ -1,5 +1,5 @@
 import json
-from urllib import urlencode
+from urllib import urlencode, quote_plus
 import requests
 import os
 
@@ -63,8 +63,7 @@ class FeedlyAPI(object):
                 "Authorization": "".join(["OAuth ", self.access_token])
             }
         )
-        if response.status_code == 200:
-            return response.json()
+        return response.json()
 
     def _make_post_request(self, endpoint, data={}):
         if self.access_token is None:
@@ -76,8 +75,28 @@ class FeedlyAPI(object):
                 "Content-Type": "application/json"
             }
         )
-        if response.status_code == 200:
-            return response.json()
+        if response.status_code != 200:
+            raise Exception(
+                "Got status code {response.status_code} and content "
+                "{response.content}".format(**locals())
+            )
+
+    def _make_delete_request(self, endpoint, data={}):
+        # TODO: make request method (make_get, make_post, make_delete) generic
+        if self.access_token is None:
+            raise Exception("No access_token present")
+        response = requests.delete(
+            "".join([self.base_url, endpoint]), data=json.dumps(data),
+            headers={
+                "Authorization": "".join(["OAuth ", self.access_token]),
+                "Content-Type": "application/json"
+            }
+        )
+        if response.status_code != 200:
+            raise Exception(
+                "Got status code {response.status_code} and content "
+                "{response.content}".format(**locals())
+            )
 
     def get_auth_url(self):
         """
@@ -169,7 +188,14 @@ class FeedlyAPI(object):
         """
         Change the label of an existing category
         """
-        raise NotImplementedError("Not implemented yet")
+        self._make_post_request(
+            "".join(["v3/categories/", quote_plus(category_id)]), data={"label": label}
+        )
+
+    def delete_category(self, category_id):
+        self._make_delete_request(
+            "".join(["v3/categories/", quote_plus(category_id)])
+        )
 
     # entries endpoints - http://developer.feedly.com/v3/entries
     def get_entry(self, entry_id):
