@@ -23,7 +23,7 @@ some methods after this. For example:
 API endpoints checklist (http://developer.feedly.com/):
 
     [*] Authentication
-    [-] Categories
+    [*] Categories
     [-] Entries
     [ ] Evernote
     [ ] Facebook
