@@ -38,9 +38,11 @@ class FeedlyAPI(object):
         # allow client_id and client_secret overriding
         self.client_id = client_id
         self.client_secret = client_secret
+        self.sandbox = False
         self.base_url = self.BASE_URL
         if self.client_id == "sandbox":
             self.base_url = self.SANDBOX_BASE_URL
+            self.sandbox = True
 
         # TODO: allow overriding of redirect_uri and scope
         self.redirect_uri = "http://localhost:8080/"
@@ -163,7 +165,10 @@ class FeedlyAPI(object):
         """
         return self._make_get_request("v3/categories")
 
-    def update_category(self, category_id):
+    def update_category(self, category_id, label):
+        """
+        Change the label of an existing category
+        """
         raise NotImplementedError("Not implemented yet")
 
     # entries endpoints - http://developer.feedly.com/v3/entries/#create-and-tag-an-entry

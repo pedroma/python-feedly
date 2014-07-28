@@ -42,7 +42,7 @@ class TestBaseFeedlyClass(unittest.TestCase):
     def test_update_category(self):
         self.assertRaises(
             NotImplementedError,
-            self.feedly.update_category, ""
+            self.feedly.update_category, "", ""
         )
 
     def test_get_entry(self):
