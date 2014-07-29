@@ -49,16 +49,10 @@ class FeedlyAPI(object):
         self.scope = "https://cloud.feedly.com/subscriptions"
         self.access_token = access_token
         self.refresh_token = refresh_token
-
-    def _get_auth_headers(self):
-        return {
-            "Authorization": "OAuth {0}".format(self.access_token),
-            "Content-Type": "application/json"
-        }
+        self.rate_limit_counter = 0
 
     def _make_request(self, method, endpoint, params={}, data={}, auth=True):
         """
-
         :param method: requests HTTP method to be used
         :param endpoint: url to be requested
         :param params: query string parameters
@@ -66,18 +60,27 @@ class FeedlyAPI(object):
         :param auth: if request requires auth or not
         :return:
         """
-        requests_method = getattr(requests, method)
         if auth and self.access_token is None:
             raise Exception("No access_token present")
+        requests_method = getattr(requests, method)
+
+        headers = {
+            "Content-Type": "application/json"
+        }
+        if auth:
+            # some API calls don't need authorization
+            headers["Authorization"] = "OAuth {0}".format(self.access_token)
+
         response = requests_method(
             "{0}{1}".format(self.base_url, endpoint), params=params,
-            data=json.dumps(data), headers=self._get_auth_headers()
+            data=json.dumps(data), headers=headers
         )
         if response.status_code != 200:
             raise Exception(
                 "Got status code {response.status_code} and content "
                 "{response.content}".format(**locals())
             )
+        self.rate_limit_counter = response.headers["x-ratelimit-count"]
         return response.json()
 
     def _make_get_request(self, endpoint, **kwargs):
@@ -199,12 +202,17 @@ class FeedlyAPI(object):
             "v3/entry/{0}".format(quote_plus(entry_id)), auth=auth
         )
 
-    def get_entry_list(self, entries, auth=True):
+    def get_entry_list(self, entries, continuation=None, auth=True):
         """
         Get the content for a dynamic list of entries
         :param entries: list os entry ids (limited to 1000)
         """
-        raise NotImplementedError("Not implemented yet")
+        data = {
+            "ids": entries
+        }
+        if continuation is not None:
+            data["continuation"] = continuation
+        return self._make_post_request("v3/entries/.mget", data=data)
 
     def create_and_tag_entry(self, entry):
         """
