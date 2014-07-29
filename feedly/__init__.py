@@ -306,14 +306,45 @@ class FeedlyAPI(object):
             )
         return self._make_post_request("v3/markers/", data=data)
 
-    def undo_mark_as_read(self):
-        raise NotImplementedError("Not implemented yet")
+    def undo_mark_as_read(self, category_ids=None, feed_ids=None):
+        """
+        Undo mark as read
+        You can provide either `category_ids` or `feed_ids`. If you provide both
+        only `category_ids` will be used.
+        """
+        if category_ids is None and feed_ids is None:
+            raise Exception("you have to provide either feeds or categories")
+        data = {
+            "action": "undoMarkAsRead",
+            "type": "categories"
+        }
+        if category_ids is not None:
+            data["categoryIds"] = category_ids
+        elif feed_ids is not None:
+            data["feedIds"] = feed_ids
+        return self._make_post_request("v3/markers/", data=data)
 
-    def mark_articles_as_saved(self):
-        raise NotImplementedError("Not implemented yet")
+    def mark_articles_as_saved(self, entries):
+        """
+        Mark one or multiple articles as saved
+        """
+        data = {
+            "entryIds": entries,
+            "action": "markAsSaved",
+            "type": "entries"
+        }
+        return self._make_post_request("v3/markers/", data=data)
 
-    def mark_articles_as_unsaved(self):
-        raise NotImplementedError("Not implemented yet")
+    def mark_articles_as_unsaved(self, entries):
+        """
+        Mark one or multiple articles as unsaved
+        """
+        data = {
+            "entryIds": entries,
+            "action": "markAsUnsaved",
+            "type": "entries"
+        }
+        return self._make_post_request("v3/markers/", data=data)
 
     def get_latest_reads(self, newer_than=None):
         """

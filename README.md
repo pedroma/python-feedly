@@ -38,7 +38,7 @@ API endpoints checklist (http://developer.feedly.com/):
     [ ] Evernote
     [ ] Facebook
     [*] Feeds
-    [-] Markers
+    [*] Markers
     [ ] Microsoft
     [ ] Mixes
     [ ] OPML
