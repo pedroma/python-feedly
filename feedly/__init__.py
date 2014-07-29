@@ -56,9 +56,18 @@ class FeedlyAPI(object):
             "Content-Type": "application/json"
         }
 
-    def _make_request(self, method, endpoint, params={}, data={}):
+    def _make_request(self, method, endpoint, params={}, data={}, auth=True):
+        """
+
+        :param method: requests HTTP method to be used
+        :param endpoint: url to be requested
+        :param params: query string parameters
+        :param data: json parameters (mostly for POST)
+        :param auth: if request requires auth or not
+        :return:
+        """
         requests_method = getattr(requests, method)
-        if self.access_token is None:
+        if auth and self.access_token is None:
             raise Exception("No access_token present")
         response = requests_method(
             "{0}{1}".format(self.base_url, endpoint), params=params,
@@ -71,18 +80,18 @@ class FeedlyAPI(object):
             )
         return response.json()
 
-    def _make_get_request(self, endpoint, params={}):
+    def _make_get_request(self, endpoint, **kwargs):
         """
         Makes a request to `endpoint` using available access_token.
         Throws Exception if access_token does not exist
         """
-        return self._make_request("get", endpoint, params={})
+        return self._make_request("get", endpoint, **kwargs)
 
-    def _make_post_request(self, endpoint, data={}):
-        return self._make_request("post", endpoint, data=data)
+    def _make_post_request(self, endpoint, **kwargs):
+        return self._make_request("post", endpoint, **kwargs)
 
-    def _make_delete_request(self, endpoint, data={}):
-        return self._make_request("delete", endpoint, data=data)
+    def _make_delete_request(self, endpoint, **kwargs):
+        return self._make_request("delete", endpoint, **kwargs)
 
     def get_auth_url(self):
         """
@@ -175,27 +184,50 @@ class FeedlyAPI(object):
         Change the label of an existing category
         """
         self._make_post_request(
-            "".join(["v3/categories/", quote_plus(category_id)]), data={"label": label}
+            "v3/categories/".format(quote_plus(category_id)),
+            data={"label": label}
         )
 
     def delete_category(self, category_id):
         self._make_delete_request(
-            "".join(["v3/categories/", quote_plus(category_id)])
+            "v3/categories/{0}".format(quote_plus(category_id))
         )
 
     # entries endpoints - http://developer.feedly.com/v3/entries
-    def get_entry(self, entry_id):
-        return self._make_get_request("".join(["v3/entry/", entry_id]))
+    def get_entry(self, entry_id, auth=True):
+        return self._make_get_request(
+            "v3/entry/{0}".format(quote_plus(entry_id)), auth=auth
+        )
 
-    def get_entry_list(self, entries):
+    def get_entry_list(self, entries, auth=True):
+        """
+        Get the content for a dynamic list of entries
+        :param entries: list os entry ids (limited to 1000)
+        """
         raise NotImplementedError("Not implemented yet")
+
+    def create_and_tag_entry(self, entry):
+        """
+        Create and tag an entry
+        The fields: title, content or summary or enclosure, alternate, published
+        are mandatory
+        Entry example at
+        http://developer.feedly.com/v3/entries/#create-and-tag-an-entry
+        """
+        return self._make_post_request("v3/entries", data=entry)
 
     # feeds endpoints - http://developer.feedly.com/v3/feeds/
     def get_feed(self, feed_id):
-        return self._make_get_request("".join(["v3/feeds/", feed_id]))
+        return self._make_get_request(
+            "v3/feeds/{0}".format(quote_plus(feed_id))
+        )
 
     def get_feed_list(self, feeds):
-        raise NotImplementedError("Not implemented yet")
+        """
+        Get the metadata for a list of feeds
+        :param feeds: list of feed ids
+        """
+        return self._make_post_request("v3/feeds/.mget", data=feeds)
 
     # markers endpoints - http://developer.feedly.com/v3/markers/
     def get_unread_counts(self):
