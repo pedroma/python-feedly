@@ -4,12 +4,13 @@
 Sample usage:
 
     from feedly import FeedlyAPI
-    feedly = FeedlyAPI(sandbox=True)
+    feedly = FeedlyAPI(client_id="client_id", client_secret="client_secret")
     feedly.get_auth_url()
     'https://sandbox.feedly.com/v3/auth/auth?scope....'
 
 At this point you have to go to the url given and login. After feedly redirects
-you back to `http://localhost:8080/` you will have a code as a GET parameter
+you back (feedly's sandbox will always redirect you to `http://localhost:8080/`)
+ you will have a code as a GET parameter
 
     code = "code_from_request"
     feedly.get_access_token(code)
@@ -19,12 +20,21 @@ some methods after this. For example:
 
     feedly.get_profile()
     
+To be able to use the same token you have to store `feedly.access_token` and 
+`feedly.refresh_token` to future use:
+
+    feedly = FeedlyAPI(
+        client_id="client_id", client_secret="client_secret", 
+        access_token="access_token", refresh_token="refresh_token"
+    )
+    feedly.get_profile()
+
 
 API endpoints checklist (http://developer.feedly.com/):
 
     [*] Authentication
     [*] Categories
-    [-] Entries
+    [*] Entries
     [ ] Evernote
     [ ] Facebook
     [*] Feeds
