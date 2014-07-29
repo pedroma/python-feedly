@@ -36,10 +36,10 @@ class TestBaseFeedlyClass(unittest.TestCase):
     def setUp(self):
         # make sure that when you are testing you use the sandbox environment
         # these tests change feedly values
-        access_token = os.environ.get('FEEDLY_ACCESS_TOKEN')
-        refresh_token = os.environ.get('FEEDLY_REFRESH_TOKEN')
-        client_id = os.environ.get('FEEDLY_CLIENT_ID')
-        client_secret = os.environ.get('FEEDLY_CLIENT_SECRET')
+        access_token = "token_for_access"
+        refresh_token = "token_for_refresh"
+        client_id = "sandbox"
+        client_secret = "very_secret"
         self.feedly = FeedlyAPI(
             client_id=client_id, client_secret=client_secret,
             access_token=access_token, refresh_token=refresh_token

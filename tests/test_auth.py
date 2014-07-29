@@ -17,8 +17,8 @@ def get_access_token_exception(url, request):
 
 class TestFeedlyAuth(unittest.TestCase):
     def setUp(self):
-        client_id = os.environ.get('FEEDLY_CLIENT_ID')
-        client_secret = os.environ.get('FEEDLY_CLIENT_SECRET')
+        client_id = "sandbox"
+        client_secret = "very_secret"
         self.feedly = FeedlyAPI(
             client_id=client_id, client_secret=client_secret
         )
