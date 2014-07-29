@@ -1,32 +1,35 @@
 import json
 import unittest
 import os
-from urlparse import parse_qs
-from httmock import urlmatch, HTTMock
+from httmock import urlmatch, HTTMock, response
 from feedly import FeedlyAPI
 from tests.config import PROFILE_EXAMPLE, CATEGORIES_EXAMPLE, ENTRY_EXAMPLE
 
 
 @urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/profile")
 def get_profile_successfull(url, request):
-    return json.dumps(PROFILE_EXAMPLE)
+    headers = {"x-ratelimit-count": 0}
+    return response(200, json.dumps(PROFILE_EXAMPLE), headers)
 
 
 @urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/profile")
 def update_profile_successfull(url, request):
+    headers = {"x-ratelimit-count": 0}
     profile = PROFILE_EXAMPLE.copy()
     profile.update(json.loads(request.body))
-    return json.dumps(profile)
+    return response(200, json.dumps(profile), headers)
 
 
 @urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/categories")
 def get_categories_successfull(url, request):
-    return json.dumps(CATEGORIES_EXAMPLE)
+    headers = {"x-ratelimit-count": 0}
+    return response(200, json.dumps(CATEGORIES_EXAMPLE), headers)
 
 
 @urlmatch(netloc=r'(.*\.)?sandbox\.feedly\.com$', path="/v3/entry")
 def get_entries_successfull(url, request):
-    return json.dumps(ENTRY_EXAMPLE)
+    headers = {"x-ratelimit-count": 0}
+    return response(200, json.dumps(ENTRY_EXAMPLE), headers)
 
 
 class TestBaseFeedlyClass(unittest.TestCase):

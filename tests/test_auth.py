@@ -7,7 +7,7 @@ from tests.config import AUTH_URL_SANDBOX, AUTH_URL_PRODUCTION
 
 @urlmatch(netloc=r'(.*\.)?feedly\.com$', path="/v3/auth/token")
 def get_access_token_successfull(url, request):
-    return '{"accessToken": "dummy_token", "refreshToken": "dummy_token"}'
+    return '{"access_token": "dummy_token", "refresh_token": "dummy_token"}'
 
 
 @urlmatch(netloc=r'(.*\.)?feedly\.com$', path="/v3/auth/token")

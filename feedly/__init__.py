@@ -80,7 +80,8 @@ class FeedlyAPI(object):
                 "Got status code {response.status_code} and content "
                 "{response.content}".format(**locals())
             )
-        self.rate_limit_counter = response.headers["x-ratelimit-count"]
+        if "x-ratelimit-count" in response.headers:
+            self.rate_limit_counter = response.headers["x-ratelimit-count"]
         return response.json()
 
     def _make_get_request(self, endpoint, **kwargs):
@@ -108,7 +109,7 @@ class FeedlyAPI(object):
             "scope": self.scope
         }
         query_string = urlencode(query_params)
-        return "".join([self.base_url, endpoint, "?", query_string])
+        return "{0}{1}?{2}".format(self.base_url, endpoint, query_string)
 
     def get_access_token(self, code):
         """
@@ -124,13 +125,13 @@ class FeedlyAPI(object):
             "client_secret": self.client_secret
 
         }
-        request_url = "".join([self.base_url, endpoint])
-        response = requests.post(request_url, params=query_params)
-        credentials = response.json()
-        if "accessToken" not in credentials or "refreshToken" not in credentials:
-            raise Exception("Authentication failed")
-        self.access_token = credentials["accessToken"]
-        self.refresh_token = credentials["refreshToken"]
+        credentials = self._make_post_request(
+            endpoint, params=query_params, auth=False
+        )
+        if "access_token" not in credentials or "refresh_token" not in credentials:
+            raise Exception("Authentication failed: {0}".format(credentials))
+        self.access_token = credentials["access_token"]
+        self.refresh_token = credentials["refresh_token"]
         return credentials
 
     def update_access_token(self):
@@ -147,11 +148,11 @@ class FeedlyAPI(object):
             "refresh_token": self.refresh_token,
             "grant_type": "refresh_token"
         }
-        request_url = "".join([self.base_url, endpoint])
-        response = requests.post(request_url, params=query_params)
-        credentials = response.json()
-        if "accessToken" in credentials:
-            self.access_token = credentials["accessToken"]
+        credentials = self._make_post_request(
+            endpoint, params=query_params, auth=False
+        )
+        if "access_token" in credentials:
+            self.access_token = credentials["access_token"]
         return credentials
 
     # profiles endpoints - http://developer.feedly.com/v3/profile/
