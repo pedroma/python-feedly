@@ -50,54 +50,39 @@ class FeedlyAPI(object):
         self.access_token = access_token
         self.refresh_token = refresh_token
 
+    def _get_auth_headers(self):
+        return {
+            "Authorization": "OAuth {0}".format(self.access_token),
+            "Content-Type": "application/json"
+        }
+
+    def _make_request(self, method, endpoint, params={}, data={}):
+        requests_method = getattr(requests, method)
+        if self.access_token is None:
+            raise Exception("No access_token present")
+        response = requests_method(
+            "{0}{1}".format(self.base_url, endpoint), params=params,
+            data=json.dumps(data), headers=self._get_auth_headers()
+        )
+        if response.status_code != 200:
+            raise Exception(
+                "Got status code {response.status_code} and content "
+                "{response.content}".format(**locals())
+            )
+        return response.json()
+
     def _make_get_request(self, endpoint, params={}):
         """
         Makes a request to `endpoint` using available access_token.
         Throws Exception if access_token does not exist
         """
-        if self.access_token is None:
-            raise Exception("No access_token present")
-        response = requests.get(
-            "".join([self.base_url, endpoint]), params=params,
-            headers={
-                "Authorization": "".join(["OAuth ", self.access_token])
-            }
-        )
-        return response.json()
+        return self._make_request("get", endpoint, params={})
 
     def _make_post_request(self, endpoint, data={}):
-        if self.access_token is None:
-            raise Exception("No access_token present")
-        response = requests.post(
-            "".join([self.base_url, endpoint]), data=json.dumps(data),
-            headers={
-                "Authorization": "".join(["OAuth ", self.access_token]),
-                "Content-Type": "application/json"
-            }
-        )
-        if response.status_code != 200:
-            raise Exception(
-                "Got status code {response.status_code} and content "
-                "{response.content}".format(**locals())
-            )
-        return response.json()
+        return self._make_request("post", endpoint, data=data)
 
     def _make_delete_request(self, endpoint, data={}):
-        # TODO: make request method (make_get, make_post, make_delete) generic
-        if self.access_token is None:
-            raise Exception("No access_token present")
-        response = requests.delete(
-            "".join([self.base_url, endpoint]), data=json.dumps(data),
-            headers={
-                "Authorization": "".join(["OAuth ", self.access_token]),
-                "Content-Type": "application/json"
-            }
-        )
-        if response.status_code != 200:
-            raise Exception(
-                "Got status code {response.status_code} and content "
-                "{response.content}".format(**locals())
-            )
+        return self._make_request("delete", endpoint, data=data)
 
     def get_auth_url(self):
         """

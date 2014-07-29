@@ -1,6 +1,7 @@
 import json
 import unittest
 import os
+from urlparse import parse_qs
 from httmock import urlmatch, HTTMock
 from feedly import FeedlyAPI
 from tests.config import PROFILE_EXAMPLE, CATEGORIES_EXAMPLE, ENTRY_EXAMPLE
