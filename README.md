@@ -40,7 +40,7 @@ API endpoints checklist (http://developer.feedly.com/):
     [*] Feeds
     [*] Markers
     [ ] Microsoft
-    [ ] Mixes
+    [*] Mixes
     [ ] OPML
     [ ] Preference
     [*] Profile

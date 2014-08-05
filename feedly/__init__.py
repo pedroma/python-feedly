@@ -365,3 +365,35 @@ class FeedlyAPI(object):
         if newer_than is not None:
             params["newerThan"] = newer_than
         return self._make_get_request("v3/markers/tags", params=params)
+
+    # Mixes endpoints - http://developer.feedly.com/v3/mixes/
+    def get_engaging_content(self, stream_id, auth=True, **kwargs):
+        """
+        Get a mix of the most engaging content available in a stream
+
+        This API allows application to get access to the most engaging content
+        available in a stream. The stream can be a feed, a category, or a topic.
+        Allowed options:
+            count - Optional integer number of entry ids to return. default is 3. max is 20.
+            unread_only - Optional boolean default value is false.
+            hours - Optional integer Hour of the day.
+            newer_than - Optional long timestamp in ms.
+            backfill - Optional boolean
+            locale - Optional string preferred locale for results (used as a hint, not as a filter)
+        Check http://developer.feedly.com/v3/mixes/ for more info
+        """
+        allowed_kwargs = [
+            "count", "unread_only", "hours", "newer_than", "backfill", "locale"
+        ]
+        for key in kwargs:
+            if key not in allowed_kwargs:
+                raise Exception(
+                    "Not valid key '{0}' provided as kwargs".format(key)
+                )
+        params = {
+            "streamId": stream_id
+        }
+        params.update(kwargs)
+        return self._make_get_request(
+            "v3/mixes/contents", params=params, auth=auth
+        )
